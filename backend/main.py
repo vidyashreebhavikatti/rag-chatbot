@@ -1,5 +1,6 @@
+
 from fastapi import FastAPI, UploadFile
-import pdfplumber
+from services.pdf_loader import load_and_chunk_pdf
 import uvicorn
 
 app = FastAPI()
@@ -10,14 +11,14 @@ def root():
 
 @app.post("/upload")
 async def upload_pdf(file: UploadFile):
-    text = ""
-    with pdfplumber.open(file.file) as pdf:
-        for page in pdf.pages:
-            page_text = page.extract_text()
-            if page_text:
-                text += page_text + "\n"
+    chunks = load_and_chunk_pdf(file.file)
 
-    return {"status": "success", "text_length": len(text)}
+    return {
+        "status": "success",
+        "total_chunks": len(chunks),
+        "preview": chunks[:2]  # just for testing
+    }
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8003)
